@@ -4,10 +4,11 @@ import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_b
 import OpenAIAPI from 'openai';
 import * as fun from "./export_functions.js";
 
+
 const ignoreParagraphs =["cookie", "ourData", "Policy","Added to your basket"]
 const prompt = promptSync();
 const openai = new OpenAIAPI({
-    apiKey: 'sk-proj-xdbh82YHy09PveiRiPl1T3BlbkFJz4Akoedlt5MFxhhOaf6P',
+    apiKey: 'sk-proj-3NsDsF85zwj9nZEH8On4T3BlbkFJ7v8Rs3awGvJDVHKlBMcz',
     engine: 'gpt-3.5-turbo-0125',  // or your preferred ChatGPT model
   });
 
@@ -116,7 +117,8 @@ const openai = new OpenAIAPI({
  /**
   * Main function: Program execution starts here
   */
- async function main(){
+
+  const getResponse = async (req, res) => {
   try{
   
    let data = await fetchWebsiteData(websiteUrl);
@@ -127,26 +129,24 @@ const openai = new OpenAIAPI({
         paragraph => ignoreParagraphs
         .findIndex(ignoreParagraph=>paragraph.includes(ignoreParagraph))==-1
       )
-      let userInput = -1;
-      while(true){
-        userInput = prompt("Enter Your question or 0 to exit ");
-        if(userInput==0){
-          break;
-        }   
-      //query ChatGPT
-     let answer= await askChatGPT(userInput, data)
-     console.log("Answer: ", answer)     
-    }
+      
+      let userPrompt = req.body.userPrompt;
+
+      let answer = await askChatGPT(userPrompt, data);
+      res.status(200).json({ responseContent: answer });
+      console.log("Answer: ", answer)     
+    
 
     }
   }
-} catch (error){
-  console.error("Error ", error)
+} catch (error) {
+  console.error("Error", error);
+  res.status(500).json({ error: "Internal server error" });
 }
 
  } 
 
-main();
+ export default getResponse;
 
 
-  
+
