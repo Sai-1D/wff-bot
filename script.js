@@ -5,7 +5,7 @@ const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 
 let userMessage = null; // Variable to store user's message
-const API_KEY = "sk-proj-3NsDsF85zwj9nZEH8On4T3BlbkFJ7v8Rs3awGvJDVHKlBMcz"; // Paste your API key here
+const API_KEY = "sk-proj-zXV1vnFjKXWY6J1SHvE7T3BlbkFJbUHat7uscH4HYRUkEGeL"; // Paste your API key here
 const inputInitHeight = chatInput.scrollHeight;
 
 const createChatLi = (message, className) => {
@@ -19,7 +19,7 @@ const createChatLi = (message, className) => {
 }
 
 const generateResponse = (chatElement) => {
-    const API_URL = "http://localhost:3000/getResponse";
+    const API_URL = "/getResponse";
     const messageElement = chatElement.querySelector("p");
 
     // Define the properties and message for the API request
@@ -30,13 +30,13 @@ const generateResponse = (chatElement) => {
             "Authorization": `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
-            userPrompt: userMessage,
+            userInput: userMessage,
         })
     }
 
     // Send POST request to API, get response and set the reponse as paragraph text
     fetch(API_URL, requestOptions).then(res => res.json()).then(data => {
-        console.log('data',data);
+        console.log('userInput',data);
          messageElement.textContent = data.responseContent.trim();
     }).catch((err) => {
         console.log(err);
@@ -77,7 +77,7 @@ chatInput.addEventListener("keydown", (e) => {
     // width is greater than 800px, handle the chat
     if(e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
         e.preventDefault();
-        handleChat();
+       handleChat();
     }
 });
 
