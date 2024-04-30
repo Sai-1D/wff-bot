@@ -1,3 +1,7 @@
+import * as root from "./index.js";
+import { fetchstaticwebsitedata } from './data_extraction.js';
+
+//const root = require ("./index.js");
 const chatbotToggler = document.querySelector(".chatbot-toggler");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
@@ -5,7 +9,7 @@ const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 
 let userMessage = null; // Variable to store user's message
-const API_KEY = "sk-proj-zXV1vnFjKXWY6J1SHvE7T3BlbkFJbUHat7uscH4HYRUkEGeL"; // Paste your API key here
+const API_KEY = ""; // Paste your API key here
 const inputInitHeight = chatInput.scrollHeight;
 
 const createChatLi = (message, className) => {
@@ -45,26 +49,61 @@ const generateResponse = (chatElement) => {
     }).finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
 }
 
-const handleChat = () => {
-    userMessage = chatInput.value.trim(); // Get user entered message and remove extra whitespace
-    if(!userMessage) return;
+const handleChat = async () => {
+    userMessage = chatInput.value.trim();
+    if (!userMessage) return;
 
-    // Clear the input textarea and set its height to default
     chatInput.value = "";
     chatInput.style.height = `${inputInitHeight}px`;
 
     // Append the user's message to the chatbox
     chatbox.appendChild(createChatLi(userMessage, "outgoing"));
     chatbox.scrollTo(0, chatbox.scrollHeight);
-    
-    setTimeout(() => {
-        // Display "Thinking..." message while waiting for the response
-        const incomingChatLi = createChatLi("Thinking...", "incoming");
-        chatbox.appendChild(incomingChatLi);
-        chatbox.scrollTo(0, chatbox.scrollHeight);
-        generateResponse(incomingChatLi);
+
+    // Create a reference to the "Thinking..." message element
+    const thinkingMessage = createChatLi("Thinking...", "incoming");
+    chatbox.appendChild(thinkingMessage);
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+
+    setTimeout(async () => {
+        const question = userMessage;
+        let data = fetchstaticwebsitedata();
+        const ignoreParagraphs = ["cookie", "ourData", "Policy", "Added to your basket"]
+
+        if (data != null) {
+            if (data.paragraphs) {
+                data = data.paragraphs.filter(
+                    paragraph => ignoreParagraphs.findIndex(ignoreParagraph => paragraph.includes(ignoreParagraph)) == -1
+                );
+            }
+        }
+
+        try {
+            // Call askChatGPT function to get the response
+            const answer = await root.askChatGPT(question, data);
+
+            // Remove the "Thinking..." message element from the DOM
+            if (thinkingMessage.parentNode) {
+                thinkingMessage.parentNode.removeChild(thinkingMessage);
+            }
+
+            if (!answer) {
+                // If there's no answer, prompt the user to ask the next question
+                const noAnswerMessage = "I'm sorry, I couldn't find an answer to your question. Please ask another question.";
+                chatbox.appendChild(createChatLi(noAnswerMessage, "incoming"));
+                chatbox.scrollTo(0, chatbox.scrollHeight);
+                return;
+            }
+
+            // Append the answer to the chatbox
+            chatbox.appendChild(createChatLi(answer, "incoming"));
+            chatbox.scrollTo(0, chatbox.scrollHeight);
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }, 10);
 }
+
 
 chatInput.addEventListener("input", () => {
     // Adjust the height of the input textarea based on its content

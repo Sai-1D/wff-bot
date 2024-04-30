@@ -1,6 +1,10 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio'
+const staticdata = require("./website_data_file.json");
 
+export function fetchstaticwebsitedata(){
+  return staticdata;
+}
 
 export async function fetchWebsiteData(url) {
   try {

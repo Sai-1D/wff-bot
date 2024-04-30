@@ -202,7 +202,13 @@ export function getProductResponse(productCategory,productPrice){
 }
 
 // Function to capitalize the first letter of each word in a sentence
-function capitalizeFirstLetter(sentence) {
+
+export function capitalizeFirstLetter(sentence) {
+    // Check if the input is a string
+    if (typeof sentence !== 'string' || sentence.trim() === '') {
+        return ''; // Return an empty string if input is not valid
+    }
+    
     // Split the sentence into words
     var words = sentence.split(" ");
     

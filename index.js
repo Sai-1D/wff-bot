@@ -1,14 +1,12 @@
-import promptSync from 'prompt-sync';
-import { fetchWebsiteData } from './data_extraction.js';
+import { fetchstaticwebsitedata } from './data_extraction.js';
 import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_builder.js';
-import OpenAIAPI from 'openai';
+import OpenAIAPI from './node_modules/openai';
 import * as fun from "./export_functions.js";
 
-
 const ignoreParagraphs =["cookie", "ourData", "Policy","Added to your basket"]
-const prompt = promptSync();
 const openai = new OpenAIAPI({
-    apiKey: 'sk-proj-3NsDsF85zwj9nZEH8On4T3BlbkFJ7v8Rs3awGvJDVHKlBMcz',
+    apiKey: '',
+    dangerouslyAllowBrowser: true,
     engine: 'gpt-3.5-turbo-0125',  // or your preferred ChatGPT model
   });
 
@@ -55,7 +53,7 @@ const openai = new OpenAIAPI({
    * @param {*} data 
    * @returns returns a response if the model is able to answer the question; Error otherwise. 
    */
-  async function askChatGPT(question, data) {
+  export async function askChatGPT(question, data) {
     //construct prompt based on user's input and website data
     const prompt = `Question: ${question}\nAnswer:\n${Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n')}`;
     //create messages list
@@ -118,35 +116,46 @@ const openai = new OpenAIAPI({
   * Main function: Program execution starts here
   */
 
-  const getResponse = async (req, res) => {
-  try{
-  
-   let data = await fetchWebsiteData(websiteUrl);
-   if(data!=null){
-    if(data.paragraphs){
-      //filter uncessary paragraphs
-      data = data.paragraphs.filter(
-        paragraph => ignoreParagraphs
-        .findIndex(ignoreParagraph=>paragraph.includes(ignoreParagraph))==-1
-      )
-      
-      let userPrompt = req.body.userPrompt;
+ async function main() {
+  try {
+      let data = fetchstaticwebsitedata();
+      if (data != null) {
+          if (data.paragraphs) {
+              // Filter unnecessary paragraphs
+              data = data.paragraphs.filter(
+                  paragraph => ignoreParagraphs.findIndex(ignoreParagraph => paragraph.includes(ignoreParagraph)) == -1
+              );
 
-      let answer = await askChatGPT(userPrompt, data);
-      res.status(200).json({ responseContent: answer });
-      console.log("Answer: ", answer)     
-    
+              // Get the textarea element by its id
+              const textarea = document.getElementById("textareaInput");
+              let userInput = textarea.value.trim(); 
+              
+              while (true) {
+                  if (!userInput || userInput === "0") {
+                      break;
+                  }
 
-    }
+                  // Query ChatGPT
+                  let answer = await askChatGPT(userInput, data);
+                  console.log("Answer: ", answer);
+
+                  // Clear textarea for next input
+                  textarea.value = "";
+
+                  // Read the value from the textarea again
+                  userInput = textarea.value.trim(); // Trim whitespace
+              }
+          }
+      }
+  } catch (error) {
+      console.error("Error ", error);
   }
-} catch (error) {
-  console.error("Error", error);
-  res.status(500).json({ error: "Internal server error" });
 }
 
- } 
-
- export default getResponse;
+main();
 
 
 
+
+
+  
