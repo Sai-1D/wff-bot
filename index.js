@@ -1,13 +1,17 @@
+import * as dotenv from "dotenv";
 import promptSync from 'prompt-sync';
 import { fetchWebsiteData } from './data_extraction.js';
 import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_builder.js';
 import OpenAIAPI from 'openai';
 import * as fun from "./export_functions.js";
 
+//makes environment variables available for our application
+dotenv.config(); 
+
 const ignoreParagraphs =["cookie", "ourData", "Policy","Added to your basket"]
 const prompt = promptSync();
 const openai = new OpenAIAPI({
-    apiKey: 'sk-proj-xdbh82YHy09PveiRiPl1T3BlbkFJz4Akoedlt5MFxhhOaf6P',
+    apiKey: process.env.OPENAI_API_KEY,
     engine: 'gpt-3.5-turbo-0125',  // or your preferred ChatGPT model
   });
 
@@ -25,16 +29,26 @@ const openai = new OpenAIAPI({
           "type": "object",
           "properties": {
             "meal_name": {
-              "type": "string",
+              "type": "array",
               "description": "the meal name",
-            },
-            "meal_category": {
+              "items": {
                 "type": "string",
-                "description": "get meal category",
+            }
+            },
+            "categories": {
+                "type": "array",
+                "description": "the meal categories. e.g. Best Sellers, Desserts, Beef, Gulten Free",
+                "items": {
+                  "type": "string",
+              }
             },
             "price": {
                 "type": "integer",
                 "description": "the meal price",
+            },
+            "discount":{
+              "type": "boolean",
+                "description": "meal discount status",
             }
           }
         }
@@ -76,33 +90,41 @@ const openai = new OpenAIAPI({
 
         if(response.choices[0].message.content==null){
 
-          if(response.choices[0].message.tool_calls[0].function.name=="meal_properties"){
+          let toolCalls=response.choices[0].message.tool_calls.length;
 
-              const function_argument = JSON.parse(response.choices[0].message.tool_calls[0].function.arguments);
+            if(response.choices[0].message.tool_calls[0].function.name=="meal_properties"){
 
-              // Extract meal_name, meal_category, and price from the function arguments
-              const productName = function_argument.meal_name;
-              const productCategory=function_argument.meal_category;
-              const productPrice=function_argument.price;
+                const function_argument = JSON.parse(response.choices[0].message.tool_calls[0].function.arguments);
+                // Extract meal_name, meal_category, and price from the function arguments
+                const productName = function_argument.name;
+                const productCategory=function_argument.categories;
+                const productPrice=function_argument.price;
+                const productDiscount=function_argument.discount;
 
-              // Get the required product response based on category and price
-              const required_product= fun.getProductResponse(productCategory,productPrice);
+                // Get the required product response based on category and price
+              const required_product= fun.getProductResponse(productName,productCategory,productPrice,productDiscount);
 
-              // Push a new message to the messagesList array with tool information and product details
-              messagesList.push({"role":"tool","tool_call_id":response.choices[0].message.tool_calls[0].id,"name": response.choices[0].message.tool_calls[0].function.name,"content": JSON.stringify(required_product),});
-              
-              // Call OpenAI API to get the completion with updated messages list
-              let second_completion = await openai.chat.completions.create({
-                  model: "gpt-3.5-turbo-0125",
-                  messages: messagesList,
-                  tools: tools,
-                  tool_choice: "auto",
+              if(required_product.length===0){
+                // Push a custom message to the messagesList array with tool information and product details for each tool call
+                for(let i=0;i<=toolCalls-1;i++){
+                messagesList.push({"role":"tool","tool_call_id":response.choices[0].message.tool_calls[i].id,"name": response.choices[0].message.tool_calls[0].function.name,"content": "Sorry no item available"});
+                }
+              }else{
+                // Push a new message to the messagesList array with tool information and product details
+                messagesList.push({"role":"tool","tool_call_id":response.choices[0].message.tool_calls[0].id,"name": response.choices[0].message.tool_calls[0].function.name,"content": JSON.stringify(required_product)});
+              } 
+                // Call OpenAI API to get the completion with updated messages list
+                let second_completion = await openai.chat.completions.create({
+                    model: "gpt-3.5-turbo-0125",
+                    messages: messagesList,
+                    tools: tools,
+                    tool_choice: "auto",
 
-              });
-             answer=second_completion.choices[0].message.content;
-          }        
+                });
+              answer=second_completion.choices[0].message.content;
+            }           
         }else{            
-          answer=response.choices[0].message.content;
+          answer=response.choices[0].message.content;         
         }      
 
       return answer;
