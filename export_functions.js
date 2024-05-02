@@ -1,8 +1,5 @@
 // Function to retrieve product data based on product category and price
-export function getProductResponse(productCategory,productPrice){
-
-    // Capitalize the first letter of the product category
-    productCategory = capitalizeFirstLetter(productCategory);
+export function getProductResponse(productName,productCategory,productPrice,productDiscount){
     
     // Array of products with their details
     const products=[
@@ -37,7 +34,8 @@ export function getProductResponse(productCategory,productPrice){
                 "Chef's Favourites",
                 "Best Sellers",
                 "Gluten Free"
-            ]
+            ],
+            "discount":true,
         },{
             "id": "614",
             "name": "Plaice in Breadcrumbs",
@@ -68,7 +66,8 @@ export function getProductResponse(productCategory,productPrice){
             "categories": [
                 "Fish",
                 "Best Sellers"
-            ]
+            ],
+            "discount":false,
         },
         {
             "id": "615",
@@ -109,7 +108,8 @@ export function getProductResponse(productCategory,productPrice){
                 "Beef",
                 "Best Sellers",
                 "Gluten Free"
-            ]
+            ],
+            "discount":true,
         },
         {
             "id": "625",
@@ -139,7 +139,8 @@ export function getProductResponse(productCategory,productPrice){
             ],
             "categories": [
                 "Beef"
-            ]
+            ],
+            "discount":false,
         },
         {
             "id": "623",
@@ -180,25 +181,98 @@ export function getProductResponse(productCategory,productPrice){
                 "Beef",
                 "Hearty Meals",
                 "Gluten Free"
-            ]
+            ],
+            "discount":false,
+        },
+        {
+            "id": "1102",
+            "name": "Fruit Cocktail",
+            "sku": "419",
+            "price": "1.190000",
+            "shortDescription": "A fruity mix of pineapple, papaya, mango, melon and grapes in apple juice.",
+            "productmadewithout": [
+                "Milk",
+                "Cheese",
+                "Eggs",
+                "Soya",
+                "Fish"
+            ],
+            "suitableFor": [
+                "Gluten Free",
+                "Low Fat",
+                "Low Salt",
+                "Vegetarian",
+                "Vegan"
+            ],
+            "productFreefrom": [
+                "Gluten",
+                "Sulphur Dioxide / Sulphites > 10mg/KG",
+                "Wheat",
+                "Rye",
+                "Barley",
+                "Oats"
+            ],
+            "allergens": [
+                "Celery",
+                "Eggs",
+                "Fish",
+                "Garlic",
+                "Lupin",
+                "Milk",
+                "Mustard",
+                "Nuts"
+            ],                
+            "categories": [
+                "Cold Desserts"
+            ],
+            "discount":true,
         }
     
     ];
 
-    // Filter products based on category and price
-    const product_data=products.filter((object) =>{
-        if(productCategory!=null){
-            //filter product cateogyr
-            return object.categories.includes(productCategory);
-        }
-        if(productPrice!=null){
-            //filter price
-            return object.price.includes(""+productPrice);
-        }
-       //return object.categories.includes(productCategory) && object.price.includes(""+productPrice)
-    });
+    // Filter products 
+   const product_data=products.filter((object) =>{            
+                
+                let filterCriteria=[];
+                
+                //filter Name
+                if(productName!=null){
+                    let productNameIncluded=productName.filter((name) =>{
+                        return object.name.includes(name);
+                    });             
+                          
+                    if(JSON.stringify(productName)==JSON.stringify(productNameIncluded)){
+                        filterCriteria.push(true);
+                    }else{
+                        filterCriteria.push(false);
+                    }
+                }
+                //filter category
+                if (productCategory != null) {
+                    let productCategoryIncluded = productCategory.filter((category) => {                       
+                        return object.categories.includes(category);
+                    });
+                    if (JSON.stringify(productCategory)==JSON.stringify(productCategoryIncluded)) {
+                        filterCriteria.push(true);
+                    } else {
+                        filterCriteria.push(false);
+                    }
+                }
+                //filter price
+                if(productPrice!=null){
+                    filterCriteria.push(object.price.includes(productPrice));
+                }
+                //filter discount
+                if(productDiscount!=null){
+                    filterCriteria.push(object.discount);
+                }    
 
-    return product_data;
+                return filterCriteria.every(element => element === true);
+
+     });
+
+        return product_data;
+
 }
 
 // Function to capitalize the first letter of each word in a sentence
