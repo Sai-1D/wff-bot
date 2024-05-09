@@ -1,5 +1,5 @@
 // Function to retrieve product data based on product category and price
-export function getProductResponse(productName,productCategory,productPrice,productDiscount){
+export function getProductResponse(productName,productCategory,productPrice){
     
     // Array of products with their details
     const products=[
@@ -34,8 +34,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Chef's Favourites",
                 "Best Sellers",
                 "Gluten Free"
-            ],
-            "discount":true,
+            ]
         },{
             "id": "614",
             "name": "Plaice in Breadcrumbs",
@@ -66,8 +65,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
             "categories": [
                 "Fish",
                 "Best Sellers"
-            ],
-            "discount":false,
+            ]
         },
         {
             "id": "615",
@@ -108,8 +106,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Beef",
                 "Best Sellers",
                 "Gluten Free"
-            ],
-            "discount":true,
+            ]
         },
         {
             "id": "625",
@@ -139,8 +136,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
             ],
             "categories": [
                 "Beef"
-            ],
-            "discount":false,
+            ]
         },
         {
             "id": "623",
@@ -181,8 +177,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Beef",
                 "Hearty Meals",
                 "Gluten Free"
-            ],
-            "discount":false,
+            ]
         },
         {
             "id": "1102",
@@ -224,8 +219,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
             ],                
             "categories": [
                 "Cold Desserts"
-            ],
-            "discount":true,
+            ]
         }
     
     ];
@@ -261,11 +255,7 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 //filter price
                 if(productPrice!=null){
                     filterCriteria.push(object.price.includes(productPrice));
-                }
-                //filter discount
-                if(productDiscount!=null){
-                    filterCriteria.push(object.discount);
-                }    
+                } 
 
                 return filterCriteria.every(element => element === true);
 
@@ -273,20 +263,4 @@ export function getProductResponse(productName,productCategory,productPrice,prod
 
         return product_data;
 
-}
-
-// Function to capitalize the first letter of each word in a sentence
-function capitalizeFirstLetter(sentence) {
-    // Split the sentence into words
-    var words = sentence.split(" ");
-    
-    // Capitalize the first character of each word
-    for (var i = 0; i < words.length; i++) {
-        words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
-    }
-    
-    // Join the words back into a sentence
-    var capitalizedSentence = words.join(" ");
-    
-    return capitalizedSentence;
 }
