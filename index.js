@@ -4,7 +4,7 @@ import OpenAIAPI from './node_modules/openai';
 import * as fun from "./export_functions.js";
 
 //makes environment variables available for our application
-dotenv.config(); 
+//dotenv.config(); 
 
 const ignoreParagraphs =["cookie", "ourData", "Policy","Added to your basket"]
 const openai = new OpenAIAPI({
@@ -43,10 +43,6 @@ const openai = new OpenAIAPI({
             "price": {
                 "type": "integer",
                 "description": "the meal price",
-            },
-            "discount":{
-              "type": "boolean",
-                "description": "meal discount status",
             }
           }
         }
@@ -56,8 +52,7 @@ const openai = new OpenAIAPI({
 
   // Define initial message for ChatGPT
   const messagesList =  [
-    {"role": "system", "content": "You are a virtual agent of Wiltshire Farm Foods which is a leading meal provider in UK. You are expected to answer questions about Wiltshire Farm Food' meal options and their delivery"},
-    {"role": "system", "content": "you give very short answers"}
+    {"role": "system", "content": "You are a virtual agent of Wiltshire Farm Foods which is a leading meal provider in UK. You are expected to answer questions about Wiltshire Farm Food' meal options and their delivery"}
     ]
 
   /**
@@ -97,10 +92,9 @@ const openai = new OpenAIAPI({
                 const productName = function_argument.name;
                 const productCategory=function_argument.categories;
                 const productPrice=function_argument.price;
-                const productDiscount=function_argument.discount;
 
                 // Get the required product response based on category and price
-              const required_product= fun.getProductResponse(productName,productCategory,productPrice,productDiscount);
+              const required_product= fun.getProductResponse(productName,productCategory,productPrice);
 
               if(required_product.length===0){
                 // Push a custom message to the messagesList array with tool information and product details for each tool call

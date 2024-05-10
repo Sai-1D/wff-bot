@@ -16,11 +16,42 @@ const createChatLi = (message, className) => {
     // Create a chat <li> element with passed message and className
     const chatLi = document.createElement("li");
     chatLi.classList.add("chat", `${className}`);
-    let chatContent = className === "outgoing" ? `<p></p>` : `<span class="material-symbols-outlined">smart_toy</span><p></p>`;
-    chatLi.innerHTML = chatContent;
-    chatLi.querySelector("p").textContent = message;
+
+    // Check if the message contains product name
+    if (message.includes("**")) {
+        // Wrap product name with <b> tags
+        message = message.replace(/\*\*(.*?)\*\*(?=\s|$)/g, '<b>$1</b>');
+        
+        // Split message after product name
+        const productNameIndex = message.indexOf("</b>") + 4;
+        const dataAfterProductName = message.substring(productNameIndex);
+
+        // Wrap data after product name with <ul> and <li> tags
+        const lines = dataAfterProductName.split('\n').filter(line => line.trim() !== '');
+        message = message.substring(0, productNameIndex) + '<ul>';
+        lines.forEach(line => {
+            const colonIndex = line.indexOf(":");
+            let title = line.substring(0, colonIndex).trim();
+            let data = line.substring(colonIndex + 1).trim();
+
+            // Remove whitespace and dash from titles except product name
+            if (title !== "Product") {
+                title = title.replace(/[-\s]/g, '');
+            }
+            
+            message += `<li><b>${title}</b>: ${data}</li>`;
+        });
+        message += '</ul>';
+    }
+
+    // Set inner HTML of chatLi
+    chatLi.innerHTML = `<span class="material-symbols-outlined">smart_toy</span><div class="chatlicont">${message}</div>`;
     return chatLi; // return chat <li> element
 }
+
+
+
+
 
 const generateResponse = (chatElement) => {
     const API_URL = "/getResponse";
@@ -100,6 +131,14 @@ const handleChat = async () => {
             chatbox.scrollTo(0, chatbox.scrollHeight);
         } catch (error) {
             console.error('Error:', error);
+            const errorMessage = "Oops! Something went wrong. Please try again or refresh the page.";
+            chatbox.appendChild(createChatLi(errorMessage, "incoming"));
+            chatbox.scrollTo(0, chatbox.scrollHeight);
+        }finally {
+            // Remove the "Thinking..." message element from the DOM
+            if (thinkingMessage.parentNode) {
+                thinkingMessage.parentNode.removeChild(thinkingMessage);
+            }
         }
     }, 10);
 }

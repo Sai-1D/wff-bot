@@ -100,6 +100,47 @@ header h2 {
   display: flex;
   list-style: none;
 }
+/*new css for buttons start */
+.chatbox .chat.incoming{
+  flex-wrap: wrap;
+}
+.button-container,.option-container{
+  flex-basis: 100%;
+  margin: 10px 0;
+  margin-left: 43px;
+  justify-content: space-between;
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.option-container {
+  border-top: 2px solid #f2a900;
+  padding-top: 15px;
+}
+.button-container button, .option-container button{
+    min-width: 105px;
+    color: #fff;
+    background-color: #173f35;
+    padding: 0 5px;
+    height: 35px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 5px 0;
+}
+.button-container button:hover, .option-container button:hover {
+  color: #f2a900;
+}
+.button-container button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.button-container button:disabled:hover {
+  color: #fff;
+}
+/*new css for buttons end */
 .chatbox .outgoing {
   margin: 20px 0;
   justify-content: flex-end;
@@ -116,7 +157,7 @@ header h2 {
   border-radius: 4px;
   margin: 0 10px 7px 0;
 }
-.chatbox .chat p {
+.chatbox .chat p,.chatbox .chat .chatlicont {
   white-space: pre-wrap;
   padding: 12px 16px;
   border-radius: 10px 10px 0 10px;
@@ -125,16 +166,19 @@ header h2 {
   font-size: 0.95rem;
   background: #724ae8;
 }
-.chatbox .incoming p {
+.chatbox .incoming p, .chatbox .incoming .chatlicont {
   border-radius: 10px 10px 10px 0;
 }
-.chatbox .chat p.error {
+.chatbox .chat p.error, .chatbox .chat .chatlicont.error {
   color: #721c24;
   background: #f8d7da;
 }
-.chatbox .incoming p {
+.chatbox .incoming p , .chatbox .incoming .chatlicont{
   color: #000;
   background: #f2f2f2;
+}
+.chatlicont ul{
+  list-style: none;
 }
 .chatbot .chat-input {
   display: flex;

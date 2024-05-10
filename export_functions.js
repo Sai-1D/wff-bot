@@ -1,5 +1,5 @@
 // Function to retrieve product data based on product category and price
-export function getProductResponse(productName,productCategory,productPrice,productDiscount){
+export function getProductResponse(productName,productCategory,productPrice){
     
     // Array of products with their details
     const products=[
@@ -35,7 +35,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Best Sellers",
                 "Gluten Free"
             ],
-            "discount":true,
         },{
             "id": "614",
             "name": "Plaice in Breadcrumbs",
@@ -67,7 +66,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Fish",
                 "Best Sellers"
             ],
-            "discount":false,
         },
         {
             "id": "615",
@@ -109,7 +107,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Best Sellers",
                 "Gluten Free"
             ],
-            "discount":true,
         },
         {
             "id": "625",
@@ -140,7 +137,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
             "categories": [
                 "Beef"
             ],
-            "discount":false,
         },
         {
             "id": "623",
@@ -182,7 +178,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 "Hearty Meals",
                 "Gluten Free"
             ],
-            "discount":false,
         },
         {
             "id": "1102",
@@ -225,7 +220,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
             "categories": [
                 "Cold Desserts"
             ],
-            "discount":true,
         }
     
     ];
@@ -261,10 +255,6 @@ export function getProductResponse(productName,productCategory,productPrice,prod
                 //filter price
                 if(productPrice!=null){
                     filterCriteria.push(object.price.includes(productPrice));
-                }
-                //filter discount
-                if(productDiscount!=null){
-                    filterCriteria.push(object.discount);
                 }    
 
                 return filterCriteria.every(element => element === true);
