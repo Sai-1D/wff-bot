@@ -153,7 +153,36 @@ chatInput.addEventListener("keydown", (e) => {
 });
 
 sendChatBtn.addEventListener("click", handleChat);
-closeBtn.addEventListener("click", () => document.body.classList.remove("show-chatbot"));
-chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
 
-document.addEventListener("DOMContentLoaded", loadChatHistory);
+// Event listener for click event on close button
+closeBtn.addEventListener("click", () => {
+    document.body.classList.remove("show-chatbot");
+    // Store the chatbot state as closed in session storage
+    sessionStorage.setItem("chatbotState", "closed");
+});
+
+// Event listener for click event on chatbot toggler button
+chatbotToggler.addEventListener("click", () => {
+    document.body.classList.toggle("show-chatbot");
+    if (document.body.classList.contains("show-chatbot")) {
+        // Store the chatbot state as open in session storage
+        sessionStorage.setItem("chatbotState", "open");
+    } else {
+        // Store the chatbot state as closed in session storage
+        sessionStorage.setItem("chatbotState", "closed");
+    }
+});
+
+// Event listener for DOMContentLoaded event to load chat history
+//document.addEventListener("DOMContentLoaded", () => {
+$(document).ready(function () {
+    loadChatHistory();
+    // Restore chatbot state on page load
+    const chatbotState = sessionStorage.getItem("chatbotState");
+    if (chatbotState === "open") {
+        document.body.classList.add("show-chatbot");
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+    }
+});
+
+

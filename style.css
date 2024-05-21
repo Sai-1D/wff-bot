@@ -152,7 +152,7 @@ header h2 {
   border-radius: 4px;
   margin: 0 10px 7px 0;
 }
-.chatbox .chat p,.chatbox .chat .chatlicont {
+.chatbox .chat p,.chatbox .chat .chatlicont,.product-wrapper {
   white-space: pre-wrap;
   padding: 12px 16px;
   border-radius: 10px 10px 0 10px;
@@ -161,14 +161,14 @@ header h2 {
   font-size: 13px;
   background: #83786f;
 }
-.chatbox .incoming p, .chatbox .incoming .chatlicont {
+.chatbox .incoming p, .chatbox .incoming .chatlicont,.product-wrapper {
   border-radius: 10px 10px 10px 0;
 }
 .chatbox .chat p.error, .chatbox .chat .chatlicont.error {
   color: #721c24;
   background: #f8d7da;
 }
-.chatbox .incoming p , .chatbox .incoming .chatlicont{
+.chatbox .incoming p , .chatbox .incoming .chatlicont,.product-wrapper{
   color: #000;
   background: #f2f2f2;
 }
@@ -221,8 +221,8 @@ header h2 {
   flex-wrap: wrap;
 }
 .option-container {
-  /* border-top: 2px solid #f2a900; 
-  padding-top: 15px;*/
+  display: inline-flex;
+  margin-left: 0;
 }
 .button-container button, .option-container button{
     min-width: 105px;
@@ -241,16 +241,26 @@ header h2 {
 .button-container button:hover, .option-container button:hover {
   color: #f2a900;
 }
-.button-container button:disabled {
+.button-container button:disabled, 
+.option-container button:disabled{
   cursor: not-allowed;
   opacity: 0.5;
 }
-.button-container button:disabled:hover {
+.button-container button:disabled:hover, 
+.option-container button:disabled:hover {
   color: #fff;
 }
 .chatbox .chat.incoming a {
   color: #173f35;
-  margin: 5px 0 0 0;
+  margin: 7px 0;
+  display: block;
+}
+.chatbox .chat.incoming a.disabled{
+  pointer-events: none;
+  opacity: 0.5; 
+}
+.chatbox .chat.incoming a.disabled:hover{
+  text-decoration: underline; 
 }
 .chatbox .chat.incoming a:hover {
   text-decoration: none;
