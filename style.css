@@ -269,6 +269,43 @@ header h2 {
   font-weight: 500;
   margin: 5px 0;
 }
+@keyframes wave {
+  0%, 60%, 100% {
+      transform: initial;
+  }
+  30% {
+      transform: translateY(-10px);
+  }
+}
+
+.thinking-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chat.incoming .thinking-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background-color: #f2a900;
+  border-radius: 50%;
+  animation: wave 1.2s infinite;
+}
+
+.chat.incoming .thinking-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.chat.incoming .thinking-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chat.incoming .thinking-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
 
 @media (max-width: 490px) {
   .chatbot-toggler {

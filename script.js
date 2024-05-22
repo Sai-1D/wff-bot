@@ -90,7 +90,7 @@ const handleChat = async () => {
     chatbox.scrollTo(0, chatbox.scrollHeight);
     saveChatHistory();
 
-    const thinkingMessage = createChatLi("Thinking...", "incoming");
+    const thinkingMessage = createChatLi('<div class="thinking-dots"><span></span><span></span><span></span></div>', "incoming");
     chatbox.appendChild(thinkingMessage);
     chatbox.scrollTo(0, chatbox.scrollHeight);
     saveChatHistory();
