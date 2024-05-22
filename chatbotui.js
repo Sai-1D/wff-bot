@@ -76,11 +76,13 @@ function initializechatui() {
             "Order a Broucher",
             "Repeat order",
         ];
+
         // Function to disable all buttons in the option container
         function disableAllOptionButtons() {
             const buttons = optionContainer.querySelectorAll("button");
             buttons.forEach(button => button.disabled = true);
         }
+
         // Function to disable all buttons in the button container
         function disableAllButtons() {
             const buttons = buttonContainer.querySelectorAll("button");
@@ -122,13 +124,36 @@ function initializechatui() {
             saveChatHistory(); // Save chat history after adding option button label
         }
 
+        // Function to add thinking dots
+        function addThinkingDots() {
+            const thinkingDotsLi = document.createElement("li");
+            thinkingDotsLi.classList.add("chat", "incoming");
+
+            const thinkingDots = document.createElement("div");
+            thinkingDots.classList.add("thinking-dots");
+            thinkingDots.innerHTML = '<span></span><span></span><span></span>';
+
+            const thinkingSymbolSpan = document.createElement("span");
+            thinkingSymbolSpan.classList.add("material-symbols-outlined");
+            thinkingSymbolSpan.textContent = "smart_toy";
+
+            thinkingDotsLi.appendChild(thinkingSymbolSpan);
+            thinkingDotsLi.appendChild(thinkingDots);
+            ul.appendChild(thinkingDotsLi);
+
+            // Save chat history
+            saveChatHistory();
+
+            return thinkingDotsLi;
+        }
+
         buttonNames.forEach((name) => {
             const button = document.createElement("button");
             button.textContent = name;
             if (name === "Order a Broucher" || name === "Repeat order") {
                 button.disabled = true; // Disable buttons
             } else {
-                button.addEventListener("click", () => {
+                button.addEventListener("click", async () => {
                     // Disable all buttons in the button container
                     disableAllButtons();
 
@@ -153,8 +178,10 @@ function initializechatui() {
                                 optionButton.id = "bestSellersOption"; // Set ID for Best sellers option button
                             }
 
-                            optionButton.addEventListener("click", () => {
+                            optionButton.addEventListener("click", async () => {
                                 disableAllOptionButtons();
+                                const thinkingDotsLi = addThinkingDots(); // Add thinking dots
+
                                 const requestOptions = {
                                     method: 'GET',
                                     headers: {
@@ -175,88 +202,78 @@ function initializechatui() {
                                 // Update the URL with the category ID
                                 const url = `http://wff.demo.botstore/rest/V1/appRanking/${categoryId}/products`;
 
-                                fetch(url, requestOptions)
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            throw new Error('Network response was not ok');
-                                        }
-                                        return response.json();
-                                    })
-                                    .then(data => {
-                                        // Process the response data here
-                                        console.log(data); // Check the structure of the response data in the console
+                                try {
+                                    const response = await fetch(url, requestOptions);
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    const data = await response.json();
+                                    // Process the response data here
+                                    console.log(data); // Check the structure of the response data in the console
 
-                                        if (data && data.length > 0) {
-                                            const ul = document.querySelector(".chatbox");
+                                    if (data && data.length > 0) {
+                                        const ul = document.querySelector(".chatbox");
 
-                                            // Create a single <li> element for all products
-                                            const productLi = document.createElement("li");
-                                            productLi.classList.add("chat", "incoming");
+                                        // Create a single <li> element for all products
+                                        const productLi = document.createElement("li");
+                                        productLi.classList.add("chat", "incoming");
 
-                                            const optionSymbolSpan = document.createElement("span");
-                                                optionSymbolSpan.classList.add("material-symbols-outlined");
-                                                optionSymbolSpan.textContent = "smart_toy";
+                                        const optionSymbolSpan = document.createElement("span");
+                                        optionSymbolSpan.classList.add("material-symbols-outlined");
+                                        optionSymbolSpan.textContent = "smart_toy";
 
-                                            // Create a <div> element as a wrapper
-                                            const productWrapper = document.createElement("div");
-                                            productWrapper.classList.add("product-wrapper");
+                                        // Create a <div> element as a wrapper
+                                        const productWrapper = document.createElement("div");
+                                        productWrapper.classList.add("product-wrapper");
 
-                                            // Show option button label as outgoing chat
-                                            showOptionButtonLabel(`You have selected ${option}`);
-                                            // Iterate over the first three products or fewer if there are less than three
-                                            for (let i = 0; i < Math.min(data.length, 3); i++) {
-                                                const product = data[i];
+                                        // Show option button label as outgoing chat
+                                        showOptionButtonLabel(`You have selected ${option}`);
+                                        // Iterate over the first three products or fewer if there are less than three
+                                        for (let i = 0; i < Math.min(data.length, 3); i++) {
+                                            const product = data[i];
 
-                                                // Construct the product URL
-                                                const productId = product.id;
-                                                const productName = product.name;
-                                                const productUrl = `http://wff.demo.botstore/catalog/product/view/id/${productId}/category/${categoryId}`;
+                                            // Construct the product URL
+                                            const productId = product.id;
+                                            const productName = product.name;
+                                            const productUrl = `http://wff.demo.botstore/catalog/product/view/id/${productId}/category/${categoryId}`;
 
-                                                // Create a <a> element for each product name
-                                                const productLink = document.createElement("a");
-                                                productLink.textContent = productName;
-                                                productLink.href = productUrl;
-                                                productLink.target = "_blank";
-                                                
+                                            // Create a <a> element for each product name
+                                            const productLink = document.createElement("a");
+                                            productLink.textContent = productName;
+                                            productLink.href = productUrl;
+                                            productLink.target = "_blank";
 
-                                                // Add click event listener to product link
-                                                productLink.addEventListener("click", () => {
-                                                    // Disable all other product links
-                                                    const productLinks = document.querySelectorAll(".chatbox .chat.incoming a");
-                                                    productLinks.forEach(link => {
-                                                        link.classList.add("disabled");
-                                                    });
-                                                    const redirectMessage = `You have selected ${productName} and we are redirecting to Product detail`;
-                                                    showOptionButtonLabel(redirectMessage);
+                                            // Add click event listener to product link
+                                            productLink.addEventListener("click", () => {
+                                                // Disable all other product links
+                                                const productLinks = document.querySelectorAll(".chatbox .chat.incoming a");
+                                                productLinks.forEach(link => {
+                                                    link.classList.add("disabled");
                                                 });
+                                                const redirectMessage = `You have selected ${productName} and we are redirecting to Product detail`;
+                                                showOptionButtonLabel(redirectMessage);
+                                            });
 
-                                                // Append the <a> element to the wrapper
-                                                productWrapper.appendChild(productLink);
-
-                                                // Append the wrapper to the <li> element
-                                            //    productLi.appendChild(productWrapper);
-
-                                                // Append the <a> element to the <li> element
-                                                
-                                                productWrapper.appendChild(productLink);
-                                              //  productWrapper.appendChild(document.createElement("br"));
-                                            }
-
-                                            // Append the single <li> element to the <ul> element
-                                            productLi.appendChild(optionSymbolSpan);
-                                            productLi.appendChild(productWrapper);
-
-                                            ul.appendChild(productLi);
-                                            saveChatHistory(); // Save chat history after adding product details
-
-                                        } else {
-                                            console.log("No products found");
+                                            // Append the <a> element to the wrapper
+                                            productWrapper.appendChild(productLink);
                                         }
-                                    })
-                                    .catch(error => {
-                                        console.error('There was a problem with your fetch operation:', error);
-                                    });
 
+                                        // Append the single <li> element to the <ul> element
+                                        productLi.appendChild(optionSymbolSpan);
+                                        productLi.appendChild(productWrapper);
+
+                                        ul.appendChild(productLi);
+                                        saveChatHistory(); // Save chat history after adding product details
+                                    } else {
+                                        console.log("No products found");
+                                    }
+                                } catch (error) {
+                                    console.error('There was a problem with your fetch operation:', error);
+                                } finally {
+                                    // Remove thinking dots
+                                    ul.removeChild(thinkingDotsLi);
+                                    saveChatHistory(); // Save chat history after removing thinking dots
+                                }
                             });
                             optionContainer.appendChild(optionButton);
                         });
@@ -326,4 +343,3 @@ function initializechatui() {
 }
 
 initializechatui();
-

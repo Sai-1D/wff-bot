@@ -13,12 +13,12 @@ body {
 }
 .chatbot-toggler {
   position: fixed;
-  bottom: 20px;
-  right: 35px;
+  bottom: 10px;
+  right: 25px;
   outline: none;
   border: none;
-  height: 50px;
-  width: 50px;
+  height: 2.78rem;
+  width: 2.78rem;
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -38,8 +38,8 @@ body {
   }
 }
 body.show-chatbot .chatbot-toggler {
-  transform: rotate(90deg);
-  width: 30px;
+  transform: rotate(180deg);
+  width: 2.78rem;
 }
 
 .chatbot-toggler span:last-child,
@@ -52,10 +52,10 @@ body.show-chatbot .chatbot-toggler span:last-child {
 .chatbot {
   position: fixed;
   right: 35px;
-  bottom: 75px;
-  width: 420px;
+  bottom: 70px;
+  width: 400px;
   background: #fff;
-  border-radius: 15px;
+  border-radius: 20px;
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
@@ -65,6 +65,7 @@ body.show-chatbot .chatbot-toggler span:last-child {
               0 32px 64px -48px rgba(0,0,0,0.5);
   transition: all 0.1s ease;
   font-size: 13px;
+  height: 541px;
 }
 body.show-chatbot .chatbot {
   opacity: 1;
@@ -137,7 +138,7 @@ header h2 {
   list-style: none;
 }
 .chatbox .outgoing {
-  margin: 20px 0;
+  margin: 15px 0;
   justify-content: flex-end;
 }
 .chatbox .incoming span {
@@ -182,7 +183,7 @@ header h2 {
   bottom: 0;
   width: 100%;
   background: #fff;
-  padding: 3px 20px;
+  padding: 3px 25px;
   border-top: 1px solid #ddd;
 }
 .chat-input textarea {
@@ -236,7 +237,7 @@ header h2 {
     justify-content: center;
     cursor: pointer;
     margin: 5px 0;
-    font-size: 13px;
+    font-size: 12px;
 }
 .button-container button:hover, .option-container button:hover {
   color: #f2a900;
