@@ -340,6 +340,37 @@ function initializechatui() {
 
     // Append the chatbot container to the parent div with class "chatbot"
     document.querySelector(".chatbotnew").appendChild(chatbotContainer);
+
+    // Check if the 'zipcode_availability' cookie is set
+    const allCookies = document.cookie;
+    console.log('All Cookies:', allCookies);
+
+    chatbotToggler.addEventListener('click', () => {
+        const zipcode = getCookie('zipcode_availability');
+        if (!zipcode) {
+            console.log('Zipcode Availability cookie not found.');
+            // Show the zipcode form and overlay
+            document.querySelector('.zipcode-form').style.display = 'block';
+            document.querySelector('.overlay').style.display = 'block';
+            document.querySelector('.zipcode-header').classList.add('chatbotzipcodemain');
+            document.body.classList.add('disabled'); // Disable the rest of the screen
+        } else {
+            console.log('Zipcode Availability:', zipcode);
+            // Proceed with opening the chatbot normally
+            document.querySelector('.chatbot').classList.toggle('active');
+            document.querySelector('.zipcode-header').classList.remove('chatbotzipcodemain');
+            document.querySelector('.overlay').style.display = 'none';
+            document.querySelector('.zipcode-form').style.display = 'none';
+        }
+    });
+    
+}
+
+// Function to read a cookie by name
+function getCookie(name) {
+    function escape(s) { return s.replace(/([.*+?\^$(){}|\[\]\/\\])/g, '\\$1'); }
+    var match = document.cookie.match(RegExp('(?:^|;\\s*)' + escape(name) + '=([^;]*)'));
+    return match ? match[1] : null;
 }
 
 initializechatui();

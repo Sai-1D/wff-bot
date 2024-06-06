@@ -306,6 +306,20 @@ header h2 {
 .chat.incoming .thinking-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
+.overlay {
+  display: none; /* Hide initially */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9;
+}
+.zipcode-header.chatbotzipcodemain{
+  z-index: 99999 !important;
+}
+
 
 
 @media (max-width: 490px) {
