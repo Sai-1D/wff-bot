@@ -1,7 +1,8 @@
 import { fetchstaticwebsitedata } from './data_extraction.js';
 import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_builder.js';
 import OpenAIAPI from './node_modules/openai';
-import * as fun from "./export_functions.js";
+import { getProductResponse } from "./SkuExport.js";
+import { addToCart } from "./AddtoCart.js";
 
 //makes environment variables available for our application
 //dotenv.config(); 
@@ -26,34 +27,73 @@ const openai = new OpenAIAPI({
         "parameters": {
           "type": "object",
           "properties": {
-            "meal_name": {
+            "name": {
               "type": "array",
               "description": "the meal name",
               "items": {
                 "type": "string",
-            }
+              }
             },
             "categories": {
-                "type": "array",
-                "description": "the meal categories. e.g. Best Sellers, Desserts, Beef, Gulten Free",
-                "items": {
-                  "type": "string",
+              "type": "array",
+              "description": "the meal categories. e.g. Best Sellers, Desserts, Beef, Gluten Free",
+              "items": {
+                "type": "string",
               }
             },
             "price": {
-                "type": "integer",
-                "description": "the meal price",
+              "type": "integer",
+              "description": "the meal price",
+            },
+            "quantity": {
+              "type": "integer",
+              "description": "the quantity of the meal",
             }
           }
         }
       }
     }
   ];
+  const softMealProducts = [
+    { "name": "Fillet of Trout in Lemon Sauce" },
+    { "name": "Steak & Mushroom Casserole" },
+    { "name": "Hearty Cottage Pie" }
+  ];
+  const buttonData = [
+    { "user": "can you give some product recommendations" },
+    { "bot": "What are you interested in 1. soft meal, 2.gluten free, 3.best sellers" },
+    { "user": "soft meal" },
+    { "bot": "we have the following gluten free products", "Products": JSON.stringify(softMealProducts) },
+  ];
+  const messagesList = [
+    { "role": "system", "content": "You are a virtual agent of Wiltshire Farm Foods which is a leading meal provider in UK. You are expected to answer questions about Wiltshire Farm Food' meal options and their delivery" },
+    { "role": "system", "content": "you give very short answers" },
+    { "role": "user", "content": JSON.stringify(buttonData) }
+  ];
 
-  // Define initial message for ChatGPT
-  const messagesList =  [
-    {"role": "system", "content": "You are a virtual agent of Wiltshire Farm Foods which is a leading meal provider in UK. You are expected to answer questions about Wiltshire Farm Food' meal options and their delivery"}
-    ]
+  function extractProductDetails(question) {
+    const productNameMatch = question.match(/(?:add|buy|order|purchase|have|get)\s+(\d+)\s+(.*)/i);
+    
+    if (productNameMatch && productNameMatch[1]) {
+      const quantity = parseInt(productNameMatch[1], 10);
+      const productName = productNameMatch[2].trim();
+      return { name: productName, quantity: quantity };
+    } else {
+      const productNameMatch = question.match(/(?:add|buy|order|purchase|have|get)\s+(.*)/i);
+      if (productNameMatch && productNameMatch[1]) {
+        const productName = productNameMatch[1].trim();
+        return { name: productName, quantity: 1 };
+      } else {
+        return { name: question.trim(), quantity: 1 };
+      }
+    }
+  }
+  function matchProductName(extractedName) {
+    const lowerCasedExtractedName = extractedName.toLowerCase();
+    const matchedProduct = softMealProducts.find(product => product.name.toLowerCase().includes(lowerCasedExtractedName));
+    return matchedProduct ? matchedProduct.name : extractedName;
+  }
+  
 
   /**
    * Function to Make API Call to Chat GPT 
@@ -62,63 +102,70 @@ const openai = new OpenAIAPI({
    * @returns returns a response if the model is able to answer the question; Error otherwise. 
    */
   export async function askChatGPT(question, data) {
-    //construct prompt based on user's input and website data
-    const prompt = `Question: ${question}\nAnswer:\n${Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n')}`;
-    //create messages list
-    messagesList.push(getMessageObject(ROLE_USER,`Question: ${question}`))
-    messagesList.push(getMessageObject(ROLE_ASSISTANT,`${prompt}`))
+    const prompt = `\n${Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n')}`;
+    messagesList.push(getMessageObject(ROLE_USER, `Question: ${question}`));
+    messagesList.push(getMessageObject(ROLE_ASSISTANT, `${prompt}`));
   
-    //invoke Chat GPT completions API
+    if (JSON.stringify(messagesList).length >= 10000 && (messagesList.length > 10)) {
+      for (let message of messagesList) {
+        let indexToBeRemoved = messagesList.indexOf(message);
+        if (message.role == "assistant" && message.content != null && indexToBeRemoved > 5) {
+          messagesList.splice(indexToBeRemoved, 1);
+        }
+      }
+    }
+  
     try {
-          const response = await openai.chat.completions.create({
-            model:'gpt-3.5-turbo-0125',
-            messages:messagesList,
-            tools: tools,
-          });
-        let responseMessage=response.choices[0].message;
-
-        // Push a new message to the messagesList array with response from chatgpt 
-        messagesList.push(responseMessage);
-        let answer =null;
-
-        if(response.choices[0].message.content==null){
-
-          let toolCalls=response.choices[0].message.tool_calls.length;
-
-            if(response.choices[0].message.tool_calls[0].function.name=="meal_properties"){
-
-                const function_argument = JSON.parse(response.choices[0].message.tool_calls[0].function.arguments);
-                // Extract meal_name, meal_category, and price from the function arguments
-                const productName = function_argument.name;
-                const productCategory=function_argument.categories;
-                const productPrice=function_argument.price;
-
-                // Get the required product response based on category and price
-              const required_product= fun.getProductResponse(productName,productCategory,productPrice);
-
-              if(required_product.length===0){
-                // Push a custom message to the messagesList array with tool information and product details for each tool call
-                for(let i=0;i<=toolCalls-1;i++){
-                messagesList.push({"role":"tool","tool_call_id":response.choices[0].message.tool_calls[i].id,"name": response.choices[0].message.tool_calls[0].function.name,"content": "Sorry no item available"});
-                }
-              }else{
-                // Push a new message to the messagesList array with tool information and product details
-                messagesList.push({"role":"tool","tool_call_id":response.choices[0].message.tool_calls[0].id,"name": response.choices[0].message.tool_calls[0].function.name,"content": JSON.stringify(required_product)});
-              } 
-                // Call OpenAI API to get the completion with updated messages list
-                let second_completion = await openai.chat.completions.create({
-                    model: "gpt-3.5-turbo-0125",
-                    messages: messagesList,
-                    tools: tools,
-                    tool_choice: "auto",
-
-                });
-              answer=second_completion.choices[0].message.content;
-            }           
-        }else{            
-          answer=response.choices[0].message.content;         
-        }      
-
+      const response = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo-0125',
+        messages: messagesList,
+        temperature: 0.5,
+        max_tokens: 100,
+      });
+  
+      let responseMessage = response.choices[0].message;
+      messagesList.push(responseMessage);
+      let answer = response.choices[0].message.content;
+  
+      // Analyzing intent to determine if it is an add-to-cart request
+      const context = `
+      User's question: "${question}"
+      Response: "${answer}"
+      Determine if the user's question is requesting to add an item to the cart, and if so, extract the product details and quantity.
+      Respond with "add_to_cart" if the intent is to add an item to the cart, otherwise respond with "no_add_to_cart".
+      `;
+  
+      const intentResponse = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo-0125',
+        messages: [
+          { role: ROLE_USER, content: context },
+        ],
+        temperature: 0.5,
+        max_tokens: 100,
+      });
+  
+      const intentMessage = intentResponse.choices[0].message.content.trim();
+  
+      if (intentMessage === "add_to_cart") {
+        const productDetails = extractProductDetails(question);
+        const matchedProductName = matchProductName(productDetails.name);
+  
+        console.log("Extracted Product Name:", matchedProductName);
+        console.log("Extracted Quantity:", productDetails.quantity);
+  
+        const skuResponse = await getProductResponse(matchedProductName);
+        const sku = skuResponse.sku;
+  
+        const cartItem = {
+          sku: sku,
+          qty: productDetails.quantity
+        };
+  
+        const result = await addToCart(cartItem);
+  
+        answer = `Added ${productDetails.quantity} of ${matchedProductName} to the cart. SKU: ${sku}`;
+      }
+  
       return answer;
     } catch (error) {
       console.error('Error:', error);
@@ -168,6 +215,7 @@ const openai = new OpenAIAPI({
 }
 
 main();
+
 
 
 
