@@ -55,9 +55,9 @@ const openai = new OpenAIAPI({
     }
   ];
   const softMealProducts = [
-    { "name": "Fillet of Trout in Lemon Sauce" },
-    { "name": "Steak & Mushroom Casserole" },
-    { "name": "Hearty Cottage Pie" }
+    { "name": "Fillet of Trout in Lemon Sauce","sku":733},
+    { "name": "Steak & Mushroom Casserole" ,"sku":214},
+    { "name": "Hearty Cottage Pie","sku":7100}
   ];
   const buttonData = [
     { "user": "can you give some product recommendations" },
@@ -91,7 +91,7 @@ const openai = new OpenAIAPI({
   function matchProductName(extractedName) {
     const lowerCasedExtractedName = extractedName.toLowerCase();
     const matchedProduct = softMealProducts.find(product => product.name.toLowerCase().includes(lowerCasedExtractedName));
-    return matchedProduct ? matchedProduct.name : extractedName;
+    return matchedProduct
   }
   
 
@@ -148,13 +148,14 @@ const openai = new OpenAIAPI({
   
       if (intentMessage === "add_to_cart") {
         const productDetails = extractProductDetails(question);
-        const matchedProductName = matchProductName(productDetails.name);
-  
+        const matchedProduct = matchProductName(productDetails.name);
+        const sku = matchedProduct.sku;
+        const matchedProductName = matchedProduct.name;
         console.log("Extracted Product Name:", matchedProductName);
         console.log("Extracted Quantity:", productDetails.quantity);
+        console.log("SKU:",sku);
   
-        const skuResponse = await getProductResponse(matchedProductName);
-        const sku = skuResponse.sku;
+        // const skuResponse = await getProductResponse(matchedProductName);
   
         const cartItem = {
           sku: sku,
