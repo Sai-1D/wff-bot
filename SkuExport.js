@@ -2,11 +2,11 @@
 
 import fetch from 'node-fetch';
 
-export async function getProductResponse(productName) {
-    const apiUrl = 'https://mcstaging.wiltshirefarmfoods.com/rest/V1/getProducts/';
+export async function SKU(productName) {
+    const apiUrl = 'http://wff.demo.botstore/rest/V1/getProducts/';
     
     const headers = {
-        'Authorization': 'Bearer eyJraWQiOiIxIiwiYWxnIjoiSFMyNTYifQ.eyJ1aWQiOjIyLCJ1dHlwaWQiOjMsImlhdCI6MTcxNzc2NTAyNSwiZXhwIjoxNzE3NzY4NjI1fQ.3-nr4fzumhAEjFtG7zfp1LZGhlFiw8PpyeRs7EYcQ3M',
+        'Authorization': '',
         'Content-Type': 'application/json'
     };
 
