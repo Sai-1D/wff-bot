@@ -1,7 +1,6 @@
 import { fetchstaticwebsitedata } from './data_extraction.js';
 import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_builder.js';
 import OpenAIAPI from './node_modules/openai';
-import * as fun from "./export_functions.js";
 import { SKU } from "./SkuExport.js";
 import { addToCart } from "./AddtoCart.js";
 
@@ -23,36 +22,6 @@ const openai = new OpenAIAPI({
     {
         "type": "function",
         "function": {
-            "name": "meal_properties",
-            "description": "Get meal properties from the user prompt",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "array",
-                        "description": "The meal name",
-                        "items": {
-                            "type": "string",
-                        }
-                    },
-                    "categories": {
-                        "type": "array",
-                        "description": "The meal categories. e.g. Best Sellers, Desserts, Beef, Gluten Free",
-                        "items": {
-                            "type": "string",
-                        }
-                    },
-                    "price": {
-                        "type": "integer",
-                        "description": "The meal price",
-                    },
-                }
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "add_to_cart",
             "description": "Add a product to the cart",
             "parameters": {
@@ -68,6 +37,23 @@ const openai = new OpenAIAPI({
                     }
                 },
                 "required": ["product_name", "quantity"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_similar_products",
+            "description": "Find products similar to the user's query",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's search query"
+                    }
+                },
+                "required": ["query"]
             }
         }
     }
@@ -134,23 +120,25 @@ export async function askChatGPT(question, data) {
                 const function_call = response.choices[0].message.tool_calls[i];
                 const function_argument = JSON.parse(function_call.function.arguments);
 
-                if (function_call.function.name === "meal_properties") {
-                    // Extract meal_name, meal_category, and price from the function arguments
-                    const productName = function_argument.name;
-                    const productCategory = function_argument.categories;
-                    const productPrice = function_argument.price;
+                // if (function_call.function.name === "meal_properties") {
+                //     // Extract meal_name, meal_category, and price from the function arguments
+                //     const productName = function_argument.name;
+                //     const productCategory = function_argument.categories;
+                //     const productPrice = function_argument.price;
 
-                    // Get the required product response based on category and price
-                    const required_product = fun.getProductResponse(productName, productCategory, productPrice);
+                //     // Get the required product response based on category and price
+                //     const required_product = fun.getProductResponse(productName, productCategory, productPrice);
 
-                    if (required_product.length === 0) {
-                        // Push a custom message to the messagesList array with tool information and product details for each tool call
-                        messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": "Sorry no item available" });
-                    } else {
-                        // Push a new message to the messagesList array with tool information and product details
-                        messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": JSON.stringify(required_product) });
-                    }
-                } else if (function_call.function.name === "add_to_cart") {
+                //     if (required_product.length === 0) {
+                //         // Push a custom message to the messagesList array with tool information and product details for each tool call
+                //         messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": "Sorry no item available with your requirement" });
+                //     } else {
+                //         // Push a new message to the messagesList array with tool information and product details
+                //         messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": JSON.stringify(required_product) });
+                //     }
+                // }
+
+                if (function_call.function.name === "add_to_cart") {
                     const productName = function_argument.product_name;
                     const quantity = function_argument.quantity;
                     // Log product name and quantity
@@ -177,9 +165,18 @@ export async function askChatGPT(question, data) {
                     // Push confirmation message to messagesList
                     messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": answer });
                 }
-            }
 
-            // Call OpenAI API to get the completion with updated messages list
+                else if (function_call.function.name === "find_similar_products") {
+                    const query = function_argument.query;
+                    console.log("I understood as it is a Similarity check Query");
+
+                    // Make a request to the Express server to find similar products
+                    const similarProducts = await findSimilarProductsFromServer(query);
+
+                    messagesList.push({ "role": "tool", "name": function_call.function.name, "tool_call_id": function_call.id, "content": `Similar products: ${JSON.stringify(similarProducts)}` });
+                    answer = `Similar products: ${similarProducts}`;
+                }
+            }
             let second_completion = await openai.chat.completions.create({
                 model: "gpt-3.5-turbo-0125",
                 messages: messagesList,
@@ -195,6 +192,21 @@ export async function askChatGPT(question, data) {
     } catch (error) {
         console.error('Error:', error);
         throw error;
+    }
+}
+async function findSimilarProductsFromServer(query) {
+    try {
+        const response = await fetch(`https://wff-mongo.onrender.com/find-similar?q=${encodeURIComponent(query)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        } else {
+            console.error('Failed to fetch similar products from server:', response.statusText);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching similar products:', error);
+        return [];
     }
 }
   
@@ -240,10 +252,3 @@ export async function askChatGPT(question, data) {
   }
   
   main();
-
-
-
-
-
-
-  
