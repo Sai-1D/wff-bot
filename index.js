@@ -15,6 +15,7 @@ const openai = new OpenAIAPI({
   });
 
   const websiteUrl = 'http://wff.demo.botstore/about-our-food'; 
+  const checkoutUrl = 'https://mcstaging.wiltshirefarmfoods.com/checkout/';
   let websiteData = {}
 
   // Define tools for ChatGPT interactions
@@ -55,6 +56,13 @@ const openai = new OpenAIAPI({
                 },
                 "required": ["query"]
             }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "go_to_Checkout_page",
+            "description": "Open the checkout URL for the user",
         }
     }
 ];
@@ -175,6 +183,11 @@ export async function askChatGPT(question, data) {
 
                     messagesList.push({ "role": "tool", "name": function_call.function.name, "tool_call_id": function_call.id, "content": `Similar products: ${JSON.stringify(similarProducts)}` });
                     answer = `Similar products: ${similarProducts}`;
+                }
+                else if (function_call.function.name === "go_to_Checkout_page") {
+                    answer = `Opening the Checkout Page. Alternatively, you can click here: <a href="${checkoutUrl}">Click here</a>`;
+                    messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": answer });
+                    window.location.href =`${checkoutUrl}`;
                 }
             }
             let second_completion = await openai.chat.completions.create({
