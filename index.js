@@ -10,7 +10,7 @@ import { addToCart } from "./AddtoCart.js";
 
 const ignoreParagraphs =["cookie", "ourData", "Policy","Added to your basket"]
 const openai = new OpenAIAPI({
-    apiKey: 'sk-proj-dBCgWa5rjRUcz694yKZ2T3BlbkFJkUXluyXd9EL3kun9pohH',
+    apiKey: '',
     dangerouslyAllowBrowser: true,
     engine: 'gpt-3.5-turbo-0125',  // or your preferred ChatGPT model
   });
