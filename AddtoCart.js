@@ -1,5 +1,4 @@
 import fetch from 'node-fetch';
-import { setCookie, getCookie } from './cookies';  // Ensure these functions are correctly implemented
 
 const magentoBaseUrl = 'http://wff.demo.botstore';
 const guestCartUrl = `${magentoBaseUrl}/rest/default/V1/guest-carts`;
@@ -11,7 +10,7 @@ async function createGuestCart() {
         const response = await fetch(guestCartUrl, {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer q3czixlmrvj1vcgavlt9hdhtj0fjwzdh',
+                'Authorization': 'Bearer 3o7zbfaroy1le9jp1hzd44neju820ejl',
                 'Content-Type': 'application/json',
             }
         });
@@ -46,7 +45,7 @@ export async function addToCart(cartItem) {
         const response = await fetch(addToCartUrl(cartId), {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer q3czixlmrvj1vcgavlt9hdhtj0fjwzdh',
+                'Authorization': 'Bearer 3o7zbfaroy1le9jp1hzd44neju820ejl',
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -82,4 +81,20 @@ function refreshCartInFrontend() {
         window.dispatchEvent(event);
         console.log('Dispatched cart-refresh event to frontend.');
     }
+}
+
+function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
 }
