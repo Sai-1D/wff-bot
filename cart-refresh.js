@@ -1,10 +1,11 @@
 require([
     'jquery',
-    'Magento_Customer/js/customer-data'
-], function ($, customerData) {
-    alert('cart refresh');
+    'Magento_Customer/js/customer-data',
+    'mage/url'
+], function ($, customerData, url) {
+    console.log('cart-refresh.js is loaded');
+    //alert('cart-refresh.js is loaded');
 
-    // Helper function to get a cookie value by name
     function getCookie(name) {
         const nameEQ = name + "=";
         const ca = document.cookie.split(';');
@@ -39,7 +40,7 @@ require([
         fetch('/rest/V1/guest-carts', {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer q3czixlmrvj1vcgavlt9hdhtj0fjwzdh',
+                'Authorization': 'Bearer 3o7zbfaroy1le9jp1hzd44neju820ejl',
                 'Content-Type': 'application/json',
             }
         })
@@ -59,11 +60,6 @@ require([
         });
     }
 
-    window.addEventListener('cart-refresh', () => {
-        console.log('Cart refresh event received. Updating cart UI...');
-        updateCartUI();
-    });
-
     function updateCartUI() {
         const guestCartId = getCookie('guest_cart_id');
         if (!guestCartId) {
@@ -75,7 +71,7 @@ require([
 
         fetch(`/rest/V1/guest-carts/${guestCartId}/items`, {
             headers: {
-                'Authorization': 'Bearer q3czixlmrvj1vcgavlt9hdhtj0fjwzdh',
+                'Authorization': 'Bearer 3o7zbfaroy1le9jp1hzd44neju820ejl',
                 'Content-Type': 'application/json',
             }
         })
@@ -87,15 +83,25 @@ require([
         })
         .then(cartItems => {
             console.log('Updated Cart Items:', cartItems);
-            const miniCart = document.querySelector('#minicart-content-wrapper');
-            if (!miniCart) {
-                console.error('#mini-cart element not found in the DOM.');
-                return;
+            // Process cart items here
+            // Update cart UI elements based on the fetched cart items
+
+            // Update the shopping cart table
+            const cartTableBody = document.querySelector('#shopping-cart-table');
+            if (cartTableBody) {
+                cartTableBody.innerHTML = buildCartItemsHTML(cartItems);
             }
-            // Build HTML for the cart items
-            miniCart.innerHTML = buildCartItemsHTML(cartItems);
+
+            // Update the mini cart
+            const miniCart = document.querySelector('#minicart-content-wrapper');
+            if (miniCart) {
+                miniCart.innerHTML = buildMiniCartItemsHTML(cartItems);
+            }
+
             updateCartCounter(cartItems); // Update the cart counter
             updateCartTotal(cartItems); // Update the cart total
+            updateCheckoutButton(cartItems); // Update the checkout button
+            updateEmptyMessage(cartItems); // Update the empty message
             customerData.reload(['cart'], false);
         })
         .catch(error => {
@@ -104,6 +110,88 @@ require([
     }
 
     function buildCartItemsHTML(cartItems) {
+        if (!Array.isArray(cartItems)) {
+            console.error('cartItems is not an array:', cartItems);
+            return '<tr><td colspan="3">Error loading cart items.</td></tr>';
+        }
+
+        if (cartItems.length === 0) {
+            return '<tr><td colspan="3">Your cart is empty.</td></tr>';
+        }
+
+        let html = '<thead><tr><th class="col item" scope="col">Item</th><th class="col qty" scope="col">Quantity</th><th class="col subtotal" scope="col">Subtotal</th></tr></thead><tbody class="cart item product-item">';
+
+        cartItems.forEach(item => {
+            html += `
+                <tr class="item-info">
+                    <td class="col item" data-th="Item">
+                    <div class="amtheme-inner">
+                    <a href="https://mcstaging.wiltshirefarmfoods.com/sweet-sour-chicken-mini-meal" title="Sweet &amp; Sour Chicken Mini Meal" aria-label="Sweet &amp; Sour Chicken Mini Meal" tabindex="-1" class="product-item-photo">   <span class="product-image-container" style="width:150px;"> <span class="product-image-wrapper" style="padding-bottom: 100%;"><img class="product-image-photo" srcset="https://mcstaging.wiltshirefarmfoods.com/media/catalog/product/0/4/044_sweet_sour_chicken_mini_meal_plated.jpg?optimize=high&amp;bg-color=255,255,255&amp;fit=bounds&amp;height=150&amp;width=150&amp;canvas=150:150&amp;dpr=2 2x,https://mcstaging.wiltshirefarmfoods.com/media/catalog/product/0/4/044_sweet_sour_chicken_mini_meal_plated.jpg?optimize=high&amp;bg-color=255,255,255&amp;fit=bounds&amp;height=150&amp;width=150&amp;canvas=150:150&amp;dpr=3 3x" src="https://mcstaging.wiltshirefarmfoods.com/media/catalog/product/0/4/044_sweet_sour_chicken_mini_meal_plated.jpg?width=294&amp;height=294&amp;canvas=294,294&amp;optimize=high&amp;bg-color=255,255,255&amp;fit=bounds" alt="Sweet &amp; Sour Chicken Mini Meal"></span></span> </a>
+                        <div class="product-item-details">
+                            <div class="product-item-name">
+                                <a href="product-url" title="${item.name}">${item.name}</a>
+                            </div>
+                            <div class="price ">    <span class="price-excluding-tax" data-label="Excl. Tax"><span class="cart-price"><span class="price">${item.price}</span></span> </span>  </div>
+                            <div class="cart-sku">${item.sku}</div>
+                        </div>
+                        </div>
+                    </td>
+                    <td class="col qty" data-th="Qty">
+                        <div class="field qty">
+                            <div class="control">
+                            ${item.qty}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="col subtotal" data-th="Subtotal" style="text-align:left">
+                        <div class="price">
+                            <span class="cart-price">
+                                <span class="price">£${(item.price * item.qty).toFixed(2)}</span>
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        html += '</tbody>';
+        html += `
+                <div class="ordertotal_wrapper"><div id="cart-totals" class="cart-totals" data-bind="scope:'block-totals'">
+                    <div class="table-wrapper">
+                        <table class="data table totals"><tbody><tr class="totals">
+                    <td colspan="2" class="mark">
+                        <strong>Total items:</strong>
+                    </td>
+                    <td class="amount">
+                        <strong>${calculateTotalItems(cartItems)}</strong>
+                    </td>
+                </tr>
+                <tr class="totals">
+                    <td colspan="2" class="mark">
+                        <strong>Delivery:</strong>
+                    </td>
+                    <td class="amount">
+                        <strong>FREE</strong>
+                    </td>
+                </tr>
+                <tr class="totals">
+                    <td colspan="2" class="mark">
+                        <strong>Total (inc VAT):</strong>
+                    </td>
+                    <td class="amount">
+                        <strong>£${calculateCartTotal(cartItems)}</strong>
+                    </td>
+                </tr>
+                </tbody>
+                </table>
+                </div>
+                </div>
+                </div>
+            `;
+        
+        return html;
+    }
+
+    function buildMiniCartItemsHTML(cartItems) {
         if (!Array.isArray(cartItems)) {
             console.error('cartItems is not an array:', cartItems);
             return '<p>Error loading cart items.</p>';
@@ -137,10 +225,17 @@ require([
                                 <a href="roast-chicken-breast-with-stuffing" title="">${item.name}</a>
                             </strong>
                             <div class="product-item-pricing">
-                                <div class="qty_price_wrapper">
-                                    <div class="cart_item_weight">${item.product_weight}</div>
-                                    <div class="price-container">
-                                        <span class="price-wrapper">   <span class="price-excluding-tax" data-label="Excl. Tax"> <span class="minicart-price"> <span class="price">£${item.price}</span></span> </span>  </span>
+                                <div class="qty_price_cart">
+                                    <div class="price-box price-final_price" data-role="priceBox">
+                                        <span class="price-container price-final_price tax weee">
+                                            <span id="product-price-803" data-price-amount="3.95" data-price-type="finalPrice" class="price-wrapper">
+                                                <span class="price-excluding-tax" data-label="Excl. Tax">
+                                                    <span class="minicart-price">
+                                                        <span class="price">£${item.price}</span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="details-qty qty">
@@ -154,7 +249,8 @@ require([
                                 <a data-bind="attr: {
                                     href: configure_url,
                                     title: $t('Edit item'),
-                                    'aria-label': $t('Edit item')}" class="action edit" href="https://mcstaging.wiltshirefarmfoods.com/checkout/cart/configure/id/235544/product_id/830/" title="Edit item" aria-label="Edit item">
+                                    'aria-label': $t('Edit item')
+                                    }" class="action edit" href="https://mcstaging.wiltshirefarmfoods.com/checkout/cart/configure/id/235544/product_id/830/" title="Edit item" aria-label="Edit item">
                                     <svg class="amtheme-icon">
                                         <use xlink:href="#icon-edit"></use>
                                     </svg>
@@ -188,7 +284,7 @@ require([
                             <span>Total (Including VAT)</span>
                         </span>
                         <div class="amount price-container" id="cart-subtotal">
-                            <span class="price">£${calculateCartTotal(cartItems)}</span>
+                            <span class="cart_total"><span class="price">£${calculateCartTotal(cartItems)}</span></span>
                         </div>
                     </div>
                     <div class="actions">
@@ -199,7 +295,7 @@ require([
                     </div>
                     <div class="actions">
                         <div class="secondary">
-                            <a class="action viewcart" data-bind="attr: {href: shoppingCartUrl, title: 'View Basket'}, i18n: 'View Basket'" href="https://mcstaging.wiltshirefarmfoods.com/checkout/cart/" title="View Basket">View Basket</a>
+                            <a class="action viewcart" data-bind="attr: {href: shoppingCartUrl, title: 'View Basket'}, i18n: 'View Basket'" href="http://wff.demo.botstore/checkout/cart/" title="View Basket">View Basket</a>
                         </div>
                     </div>
                 </div>
@@ -277,12 +373,66 @@ require([
     }
 
     function updateCartTotal(cartItems) {
-        const cartTotalElement = document.querySelector('#fetchForSubtotal .price');
+        const cartTotalElement = document.querySelector('#cart-subtotal .price');
+        const miniCartTotalElement = document.querySelector('.cart_total .price');
+        const totalAmount = `£${calculateCartTotal(cartItems)}`;
+
         if (cartTotalElement) {
-            cartTotalElement.textContent = `£${calculateCartTotal(cartItems)}`;
+            cartTotalElement.textContent = totalAmount;
         }
+        if (miniCartTotalElement) {
+            miniCartTotalElement.textContent = totalAmount;
+        }
+    }
+
+    function updateCheckoutButton(cartItems) {
+        const checkoutWrap = document.querySelector('.amtheme-checkout-wrap');
+        if (checkoutWrap) {
+            if (cartItems.length > 0) {
+                checkoutWrap.innerHTML = `
+                    <button type="button"
+                            id="form-proceed-checkout-button"
+                            data-role="proceed-to-checkout"
+                            title="Proceed to Secure Checkout"
+                            data-mage-init='{
+                                "Magento_Checkout/js/proceed-to-checkout":{
+                                    "checkoutUrl":"http://wff.demo.botstore/checkout/#isLogedCheck"
+                                }
+                            }'
+                            class="action secondary checkout">
+                        Proceed to Secure Checkout
+                    </button>
+                `;
+                document.querySelector('#form-proceed-checkout-button').addEventListener('click', proceedToCheckout);
+            } else {
+                checkoutWrap.innerHTML = '';
+            }
+        }
+    }
+
+    function updateEmptyMessage(cartItems) {
+        const emptyMessageElement = document.querySelector('.basket-empty-message');
+        if (emptyMessageElement) {
+            if (cartItems.length > 0) {
+                emptyMessageElement.style.display = 'none';
+            } else {
+                emptyMessageElement.style.display = 'block';
+            }
+        }
+    }
+
+    function proceedToCheckout() {
+        window.location.href = '/checkout/#isLogedCheck';
     }
 
     // Initialize the cart when the script is loaded
     initializeCart();
+
+    window.addEventListener('cart-refresh', () => {
+        console.log('Cart refresh event received. Updating cart UI...');
+        updateCartUI();
+    });
+
+    //document.querySelector('#top-cart-btn-checkout').addEventListener('click', proceedToCheckout);
 });
+
