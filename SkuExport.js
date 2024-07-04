@@ -6,7 +6,7 @@ export async function SKU(productName) {
     const apiUrl = 'http://wff.demo.botstore/rest/V1/getProducts/';
     
     const headers = {
-        'Authorization': 'Bearer q3czixlmrvj1vcgavlt9hdhtj0fjwzdh',
+        'Authorization': 'Bearer 3o7zbfaroy1le9jp1hzd44neju820ejl',
         'Content-Type': 'application/json'
     };
 
