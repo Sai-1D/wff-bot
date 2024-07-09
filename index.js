@@ -1,8 +1,8 @@
-import { fetchstaticwebsitedata } from './data_extraction.js';
+
 import {getMessageObject, ROLE_ASSISTANT,ROLE_USER,ROLE_SYSTEM} from './prompt_builder.js';
 import OpenAIAPI from './node_modules/openai';
 import { SKU } from "./SkuExport.js";
-import { addToCart } from "./AddtoCart.js";
+import { addToCart, updateCartQuantity, viewCart, deleteItemFromCart } from "./AddtoCart.js";
 
 //makes environment variables available for our application
 //dotenv.config(); 
@@ -38,6 +38,63 @@ const openai = new OpenAIAPI({
                     }
                 },
                 "required": ["product_name", "quantity"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+          "name": "update_cart",
+          "description": "Updates the quantity of an existing product in the cart either positively or negatively (effectively removes if quantity reaches 0).",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "product_name": {
+                "type": "string",
+                "description": "The name of the product to update in the cart."
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "The number of items to add or remove from the cart."
+              }
+            },
+            "required": ["product_name", "quantity"]
+          }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+          "name": "delete_item",
+          "description": "Deletes item from cart.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "product_name": {
+                "type": "string",
+                "description": "The name of the product to be deleted from the cart."
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "The number of items to remove from the cart. If no number is mentioned take 0."
+              }
+            }
+          }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "view_cart",
+            "description": "Display or view the contents of the cart",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "cart_contents": {
+                        "type": "object",
+                        "description": "The contents of the cart"
+                    }
+                }
             }
         }
     },
@@ -127,25 +184,6 @@ export async function askChatGPT(question, data) {
             for (let i = 0; i <= toolCalls - 1; i++) {
                 const function_call = response.choices[0].message.tool_calls[i];
                 const function_argument = JSON.parse(function_call.function.arguments);
-
-                // if (function_call.function.name === "meal_properties") {
-                //     // Extract meal_name, meal_category, and price from the function arguments
-                //     const productName = function_argument.name;
-                //     const productCategory = function_argument.categories;
-                //     const productPrice = function_argument.price;
-
-                //     // Get the required product response based on category and price
-                //     const required_product = fun.getProductResponse(productName, productCategory, productPrice);
-
-                //     if (required_product.length === 0) {
-                //         // Push a custom message to the messagesList array with tool information and product details for each tool call
-                //         messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": "Sorry no item available with your requirement" });
-                //     } else {
-                //         // Push a new message to the messagesList array with tool information and product details
-                //         messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": JSON.stringify(required_product) });
-                //     }
-                // }
-
                 if (function_call.function.name === "add_to_cart") {
                     const productName = function_argument.product_name;
                     const quantity = function_argument.quantity;
@@ -169,11 +207,101 @@ export async function askChatGPT(question, data) {
                     const result = await addToCart(cartItem);
 
                     // Update answer with confirmation message
-                    answer = `Added ${quantity} of ${matchedProductName} to the cart. SKU: ${sku}`;
+                    answer = `Added ${quantity} of ${matchedProductName} to the cart. SKU: ${sku}. Opening the checkout page.`;
                     // Push confirmation message to messagesList
                     messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": answer });
                 }
+                else if (function_call.function.name === "view_cart") {                  
+                    // Call the new viewCart function to get summarized cart information
+                    const cartSummary = await viewCart();
+                    // Check for errors returned by viewCart
+                    if (cartSummary.error) {
+                      const errorMessage = `Error fetching cart contents: ${cartSummary.error}`;
+                      console.error(errorMessage);
+                      // Optionally, push an error message to messagesList
+                      messagesList.push({
+                        "role": "tool",
+                        "tool_call_id": function_call.id,
+                        "name": function_call.function.name,
+                        "content": errorMessage
+                      });
+                      return;
+                    }
+                  
+                    // Construct a response message using the summarized cart information
+                    let message = `Your cart contains:`;
+                    message += `  - Total Quantity: ${cartSummary.totalQuantity}`;
+                    message += `  - Total Price: ${cartSummary.totalPrice}`;
+                    message += `  - Items:`;
+                    for (const item of cartSummary.items) {
+                      message += `    - Quantity: ${item.quantity}, Name: ${item.name}, Price: ${item.price}\n`;
+                    }
+                    // Push confirmation message to messagesList
+                    const actualMessage = "display this message everytime the user asks for cart details: "+message;
+                    messagesList.push({
+                      "role": "tool",
+                      "tool_call_id": function_call.id,
+                      "name": function_call.function.name,
+                      "content": actualMessage
+                    });
+                  }                  
 
+                else if (function_call.function.name === "update_cart") {
+                    const productName = function_argument.product_name;
+                    const quantity = function_argument.quantity;
+                    // Log product name and quantity
+                    console.log(`Updating the cart with: ${productName} (Quantity: ${quantity})`);
+                    
+                    // Assuming matchedProductName is the name extracted from the function arguments
+                    const matchedProductName = productName;
+
+                    // Get SKU from the SKU function
+                    const skuResponse = await SKU(matchedProductName);
+                    const sku = skuResponse.sku;
+
+                    // Create cart item with SKU and quantity
+                    const cartItem = {
+                        sku: sku,
+                        qty: quantity
+                    };
+
+                    // Add item to cart
+                    const result = await updateCartQuantity(cartItem);
+                    // Update answer with confirmation message
+                    if(result.error){
+                        answer = `Error while updating.`;
+                    }
+                    else{
+                        answer = `Updated the ${matchedProductName} to ${result.updatedQuantity} in the cart. SKU: ${sku}`;
+                    }
+                    // Push confirmation message to messagesList
+                    messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": answer });
+                }
+                
+                else if (function_call.function.name === "delete_item") {
+                    const productName = function_argument.product_name;
+                    let quantity = function_argument.quantity;
+                    if (quantity === undefined || quantity === null) {
+                        quantity = 0;
+                    }
+                    // Log product name
+                    console.log(`Deleting the product from the cart: ${productName}`);
+                    // const matchedProductName = productName;
+                    // Remove item from cart
+                    const result = await deleteItemFromCart(productName, quantity);
+                    // Update answer with confirmation message
+                    if (result == "Item doesn't exist in your cart!"){
+                        answer = result;
+                    }
+                    else if(result.error){
+                        answer =  `Error deleting the product`;
+                    }
+                    else{
+                    answer =`Deleted ${productName} from the cart.`;
+                    }
+                    // Push confirmation message to messagesList
+                    messagesList.push({ "role": "tool", "tool_call_id": function_call.id, "name": function_call.function.name, "content": answer });
+                }
                 else if (function_call.function.name === "find_similar_products") {
                     const query = function_argument.query;
                     console.log("I understood as it is a Similarity check Query");
@@ -198,6 +326,11 @@ export async function askChatGPT(question, data) {
             });
             answer = second_completion.choices[0].message.content;
         } else {
+            // If no specific function is matched, fetch similar content and proceed
+            let data = await fetchSimilarContent(question);
+            if (data) {
+                messagesList.push(getMessageObject(ROLE_ASSISTANT, `${data}`));
+            }
             answer = response.choices[0].message.content;
         }
 
@@ -222,53 +355,60 @@ async function findSimilarProductsFromServer(query) {
         return [];
     }
 }
-  
- 
+async function fetchSimilarContent(query) {
+    try {
+        const response = await fetch(`http://localhost:5000/get-similar?q=${encodeURIComponent(query)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.similarContent;
+        } else {
+            console.error('Failed to fetch similar content from server:', response.statusText);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching similar content:', error);
+        return null;
+    }
+}
+
  /**
   * Main function: Program execution starts here
   */
 
  async function main() {
     try {
-        let data = fetchstaticwebsitedata();
-        if (data != null) {
-            if (data.paragraphs) {
+        // Get the textarea element by its id
+        const textarea = document.getElementById("textareaInput");
+        let userInput = textarea.value.trim();
+
+        while (true) {
+            if (!userInput || userInput === "0") {
+                break;
+            }
+
+            // Fetch similar content based on user query
+            let data = await fetchSimilarContent(userInput);
+
+            if (data) {
                 // Filter unnecessary paragraphs
-                data = data.paragraphs.filter(
-                    paragraph => ignoreParagraphs.findIndex(ignoreParagraph => paragraph.includes(ignoreParagraph)) == -1
+                data = data.filter(
+                    paragraph => ignoreParagraphs.findIndex(ignoreParagraph => paragraph.includes(ignoreParagraph)) === -1
                 );
-  
-                // Get the textarea element by its id
-                const textarea = document.getElementById("textareaInput");
-                let userInput = textarea.value.trim(); 
-                
-                while (true) {
-                    if (!userInput || userInput === "0") {
-                        break;
-                    }
-  
-                    // Query ChatGPT
-                    let answer = await askChatGPT(userInput, data);
-                    console.log("Answer: ", answer);
-  
-                    // Clear textarea for next input
-                    textarea.value = "";
-  
-                    // Read the value from the textarea again
-                    userInput = textarea.value.trim(); // Trim whitespace
-                }
+
+                // Query ChatGPT
+                let answer = await askChatGPT(userInput, data);
+                console.log("Answer: ", answer);
+
+                // Clear textarea for next input
+                textarea.value = "";
+
+                // Read the value from the textarea again
+                userInput = textarea.value.trim(); // Trim whitespace
             }
         }
     } catch (error) {
         console.error("Error ", error);
     }
-  }
-  
-  main();
+}
 
-
-
-
-
-
-  
+main();

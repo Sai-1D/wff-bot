@@ -4,7 +4,6 @@ require([
     'mage/url'
 ], function ($, customerData, url) {
     console.log('cart-refresh.js is loaded');
-    //alert('cart-refresh.js is loaded');
 
     function getCookie(name) {
         const nameEQ = name + "=";
@@ -83,25 +82,21 @@ require([
         })
         .then(cartItems => {
             console.log('Updated Cart Items:', cartItems);
-            // Process cart items here
-            // Update cart UI elements based on the fetched cart items
 
-            // Update the shopping cart table
             const cartTableBody = document.querySelector('#shopping-cart-table');
             if (cartTableBody) {
                 cartTableBody.innerHTML = buildCartItemsHTML(cartItems);
             }
 
-            // Update the mini cart
             const miniCart = document.querySelector('#minicart-content-wrapper');
             if (miniCart) {
                 miniCart.innerHTML = buildMiniCartItemsHTML(cartItems);
             }
 
-            updateCartCounter(cartItems); // Update the cart counter
-            updateCartTotal(cartItems); // Update the cart total
-            updateCheckoutButton(cartItems); // Update the checkout button
-            updateEmptyMessage(cartItems); // Update the empty message
+            updateCartCounter(cartItems);
+            updateCartTotal(cartItems);
+            updateCheckoutButton(cartItems);
+            updateEmptyMessage(cartItems);
             customerData.reload(['cart'], false);
         })
         .catch(error => {
@@ -422,7 +417,11 @@ require([
     }
 
     function proceedToCheckout() {
-        window.location.href = '/checkout/#isLogedCheck';
+        window.location.href = 'http://wff.demo.botstore/checkout/#isLogedCheck';
+    }
+
+    function redirectToCartPage() {
+        window.location.href = 'http://wff.demo.botstore/checkout/cart/';
     }
 
     // Initialize the cart when the script is loaded
@@ -431,6 +430,12 @@ require([
     window.addEventListener('cart-refresh', () => {
         console.log('Cart refresh event received. Updating cart UI...');
         updateCartUI();
+    });
+
+    // Listen to the add to cart event and redirect to the cart page
+    $(document).on('ajax:addToCart', function (event, data) {
+        console.log('Product added to cart:', data);
+        redirectToCartPage();
     });
 
     //document.querySelector('#top-cart-btn-checkout').addEventListener('click', proceedToCheckout);
