@@ -15,7 +15,7 @@ const createChatLi = (message, className) => {
     const chatLi = document.createElement("li");
     chatLi.classList.add("chat", `${className}`);
 
-    if (message.includes("**")) {
+    if (message.includes("Description") || message.includes("Price")) {
         message = message.replace(/\*\*(.*?)\*\*(?=\s|$)/g, '<b>$1</b>');
         
         const productNameIndex = message.indexOf("</b>") + 4;
@@ -27,7 +27,6 @@ const createChatLi = (message, className) => {
             const colonIndex = line.indexOf(":");
             let title = line.substring(0, colonIndex).trim();
             let data = line.substring(colonIndex + 1).trim();
-
             if (title !== "Product") {
                 title = title.replace(/[-\s]/g, '');
             }
@@ -35,6 +34,11 @@ const createChatLi = (message, className) => {
             message += `<li><b>${title}</b>: ${data}</li>`;
         });
         message += '</ul>';
+        message = message.replace(/(\d\.\s<b>)([^<]+)(<\/b>)/g, (match, p1, p2, p3) => {
+            const originalProductName = p2; 
+            const prodlink = p2.toLowerCase().replace(/\s/g, '-').replace(/&-/g, '');
+            return `${p1}<a href="http://wff.demo.botstore/${prodlink}" target="_blank">${originalProductName}</a>${p3}`;
+        });
     }
 
     chatLi.innerHTML = `<span class="material-symbols-outlined">smart_toy</span><div class="chatlicont">${message}</div>`;
