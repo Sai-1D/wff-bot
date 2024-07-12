@@ -1,6 +1,5 @@
 import fetch from 'node-fetch';
 import { SKU } from "./SkuExport.js";
-
 const magentoBaseUrl = 'http://wff.demo.botstore';
 const guestCartUrl = `${magentoBaseUrl}/rest/default/V1/guest-carts`;
 const addToCartUrl = (cartId) => `${magentoBaseUrl}/rest/V1/guest-carts/${cartId}/items`;
@@ -82,9 +81,13 @@ export async function addToCart(cartItem) {
         const result = await response.json();
         console.log("Product added to cart successfully!", result);
 
-        // Trigger frontend cart refresh and redirect to cart page
-        refreshCartInFrontend();
-        redirectToCartPage();
+        // Trigger frontend cart refresh
+        await refreshCartInFrontend();
+
+        // Add a delay before redirecting
+        setTimeout(() => {
+            redirectToCartPage();
+        }, 1000); // Adjust the delay as needed
 
         return result;
     } catch (error) {
@@ -199,7 +202,8 @@ export async function updateCartQuantity(cartItem) {
             console.log("Product added to cart successfully!");
         }
 
-        refreshCartInFrontend();
+        await refreshCartInFrontend();
+
         return { result, updatedQuantity };
     } catch (error) {
         console.error('Error updating cart quantity:', error);
@@ -268,7 +272,7 @@ export async function deleteItemFromCart(productName, quantity) {
         console.log("Product removed from cart successfully!");
 
         // Trigger frontend cart refresh
-        refreshCartInFrontend();
+        await refreshCartInFrontend();
 
         return result;
     } catch (error) {
@@ -333,7 +337,7 @@ export async function viewCart() {
 }
 
 // Function to refresh the frontend cart
-function refreshCartInFrontend() {
+async function refreshCartInFrontend() {
     if (typeof window !== 'undefined') {
         const event = new CustomEvent('cart-refresh');
         window.dispatchEvent(event);
@@ -341,9 +345,8 @@ function refreshCartInFrontend() {
     }
 }
 
-// Function to redirect to the cart page
 function redirectToCartPage() {
     if (typeof window !== 'undefined') {
-        window.location.href = 'http://wff.demo.botstore/checkout/cart/';
+        window.location.href = `${magentoBaseUrl}/checkout/cart/`;
     }
 }
